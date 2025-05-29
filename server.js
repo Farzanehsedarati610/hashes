@@ -9,8 +9,10 @@ function computeBalance(hash) {
 }
 
 app.post('/transfer', (req, res) => {
-    const { transactions } = req.body;
+    const { account_number, routing_number, transactions } = req.body;
     const processedTransactions = transactions.map(tx => ({
+        account: account_number,
+        routing: routing_number,
         hash: tx.hash,
         computed_balance: computeBalance(tx.hash)
     }));
