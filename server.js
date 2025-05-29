@@ -19,28 +19,26 @@ function computeBalance(hash) {
 app.post('/gateway/transfer', (req, res) => {
     const { api_key, account_number, routing_number, transactions } = req.body;
 
-    // Verify API Key
-    if (api_key !== gatewaySecret) {
+    if (api_key !== process.env.GATEWAY_SECRET_KEY) {
         return res.status(403).json({ error: "Invalid API Key" });
     }
 
-    // Process Transactions & Deduct Transfer Amounts
-    const processedTransactions = transactions.map(tx => ({
-        account: account_number,
-        routing: routing_number,
-        hash: tx.hash,
-        transfer_amount: tx.transfer_amount || "Not Specified",
-        remaining_balance: computeBalance(tx.hash) - BigInt(tx.transfer_amount || "0"), // Deduct amount
-        status: "Transfer Completed"
-    }));
+    const processedTransactions = transactions.map(tx => {
+        let transferAmount = tx.transfer_amount.replace(/\D/g, ""); // Remove non-numeric characters
 
-    // Optional Logging
-    if (logTransactions) {
-        console.log("Transaction Log:", processedTransactions);
-    }
+        return {
+            account: account_number,
+            routing: routing_number,
+            hash: tx.hash,
+            transfer_amount: `${transferAmount} USD`,
+            remaining_balance: BigInt(computeBalance(tx.hash)) - BigInt(transferAmount),
+            status: "Transfer Completed"
+        };
+    });
 
     res.json({ status: "Processed", transactions: processedTransactions });
 });
+
 
 // Start the Server
 const PORT = process.env.PORT || 8080;
