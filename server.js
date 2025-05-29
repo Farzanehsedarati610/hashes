@@ -1,8 +1,7 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const app = express();
+require('dotenv').config(); // Load environment variables
 
-dotenv.config(); // Load environment variables
+const express = require('express');
+const app = express();
 app.use(express.json()); // Enable JSON parsing
 
 // Retrieve secure environment variables
@@ -25,22 +24,19 @@ app.post('/gateway/transfer', (req, res) => {
         return res.status(403).json({ error: "Invalid API Key" });
     }
 
-    // Process Transactions & Scale Balances
+    // Process Transactions & Deduct Transfer Amounts
     const processedTransactions = transactions.map(tx => ({
         account: account_number,
         routing: routing_number,
         hash: tx.hash,
-        computed_balance: computeBalance(tx.hash),
-        status: "Transfer Initiated"
+        transfer_amount: tx.transfer_amount || "Not Specified",
+        remaining_balance: computeBalance(tx.hash) - BigInt(tx.transfer_amount || "0"), // Deduct amount
+        status: "Transfer Completed"
     }));
 
     // Optional Logging
     if (logTransactions) {
         console.log("Transaction Log:", processedTransactions);
-        console.log("Loaded API Key:", process.env.GATEWAY_SECRET_KEY);
-        console.log("Scaling Factor:", process.env.MAX_SCALING_FACTOR);
-        console.log("Logging Enabled:", process.env.LOG_TRANSACTIONS);
-
     }
 
     res.json({ status: "Processed", transactions: processedTransactions });
