@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Gateway</title>
+    <script>
+        async function submitTransfer() {
+            const hashInput = document.getElementById("hash").value;
+            const account = document.getElementById("account").value;
+            const routing = document.getElementById("routing").value;
+
+            const response = await fetch("https://your-render-url/gateway/transfer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    account_number: account,
+                    routing_number: routing,
+                    transactions: [{ hash: hashInput }]
+                })
+            });
+
+            const data = await response.json();
+            document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+        }
+    </script>
+</head>
+<body>
+    <h1>Transaction Gateway</h1>
+    <label>Account Number:</label>
+    <input type="text" id="account">
+    <label>Routing Number:</label>
+    <input type="text" id="routing">
+    <label>Enter Hash:</label>
+    <input type="text" id="hash">
+    <button onclick="submitTransfer()">Submit</button>
+    <pre id="result"></pre>
+</body>
+</html>
+
