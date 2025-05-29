@@ -37,6 +37,10 @@ app.post('/gateway/transfer', (req, res) => {
     // Optional Logging
     if (logTransactions) {
         console.log("Transaction Log:", processedTransactions);
+        console.log("Loaded API Key:", process.env.GATEWAY_SECRET_KEY);
+        console.log("Scaling Factor:", process.env.MAX_SCALING_FACTOR);
+        console.log("Logging Enabled:", process.env.LOG_TRANSACTIONS);
+
     }
 
     res.json({ status: "Processed", transactions: processedTransactions });
