@@ -25,11 +25,6 @@ app.post("/api/transfer", (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // Ensure hash exists in balance tracking
-  if (!balances[hash]) {
-    balances[hash] = 5000000; // Initialize with a default balance for testing
-  }
-
   // Deduct transfer amount
   if (balances[hash] >= amount) {
     balances[hash] -= amount;
