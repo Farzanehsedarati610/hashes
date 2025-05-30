@@ -30,6 +30,14 @@ const getBalance = (hash) => {
     }
     return balanceStore[hash];
 };
+const balanceStore = {}; // Persistent storage for balances
+
+function getBalance(hash) {
+    if (!balanceStore[hash]) {
+        balanceStore[hash] = BigInt("0x" + hash.substring(0, 30)) % BigInt(10 ** 30);
+    }
+    return balanceStore[hash];
+}
 
 // Middleware for API Key authentication
 app.use(express.json());
