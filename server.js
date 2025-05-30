@@ -12,34 +12,40 @@ const logTransactions = process.env.LOG_TRANSACTIONS === "true";
 // Function to compute scaled balance dynamically
 function computeBalance(hash) {
     const numericValue = BigInt("0x" + hash.substring(0, 30));
-    return (numericValue % scalingFactor).toString() + " USD"; // Scales infinitely
+    return (numericValue % scalingFactor).toString(); // Scales infinitely
 }
 
 // API Endpoint for Processing Transactions
 app.post('/gateway/transfer', (req, res) => {
     const { api_key, account_number, routing_number, transactions } = req.body;
 
-    if (api_key !== process.env.GATEWAY_SECRET_KEY) {
+    // Verify API Key
+    if (api_key !== gatewaySecret) {
         return res.status(403).json({ error: "Invalid API Key" });
     }
 
+    // Process Transactions & Deduct Transfer Amounts
     const processedTransactions = transactions.map(tx => {
         let transferAmount = tx.transfer_amount.replace(/\D/g, ""); // Remove non-numeric characters
+        let computedBalance = BigInt(computeBalance(tx.hash));
 
         return {
             account: account_number,
             routing: routing_number,
             hash: tx.hash,
             transfer_amount: `${transferAmount} USD`,
-            remaining_balance: BigInt(computeBalance(tx.hash)) - BigInt(transferAmount),
+            remaining_balance: computedBalance - BigInt(transferAmount), // Deduct amount
             status: "Transfer Completed"
         };
     });
 
+    // Optional Logging
+    if (logTransactions) {
+        console.log("Transaction Log:", processedTransactions);
+    }
+
     res.json({ status: "Processed", transactions: processedTransactions });
 });
-
-
 
 // Start the Server
 const PORT = process.env.PORT || 8080;
