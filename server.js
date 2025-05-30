@@ -24,6 +24,8 @@ app.post("/api/transfer", (req, res) => {
   if (!hash || !amount || !routing_number || !account_number) {
     return res.status(400).json({ error: "Missing required fields" });
   }
+  // Default starting balance per hash
+const DEFAULT_BALANCE = 5000000;
 
   // Deduct transfer amount
   if (balances[hash] >= amount) {
