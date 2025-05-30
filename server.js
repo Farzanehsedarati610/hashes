@@ -1,3 +1,6 @@
+const fs = require("fs");  // Add this at the top
+
+// Your existing code below
 require("dotenv").config();
 const express = require("express");
 const app = express();
