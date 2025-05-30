@@ -17,17 +17,25 @@ app.use((req, res, next) => {
     next();
 });
 app.post("/api/register", (req, res) => {
-    const { hash, balance } = req.body;
+    const { hash } = req.body;
 
-    if (!hash || balance === undefined) {
-        return res.status(400).json({ error: "Missing required fields" });
+    if (!hash) {
+        return res.status(400).json({ error: "Missing required field: 'hash' must be provided." });
     }
 
-    // Register hash with initial balance
-    balances[hash] = balance;
+    // Initialize hash dynamically with an inferred balance
+    if (!balances[hash]) {
+        balances[hash] = calculateStartingBalance(hash);
+    }
 
-    res.json({ success: true, message: `Hash ${hash} registered with balance ${balance} USD` });
+    res.json({ success: true, message: `Hash ${hash} registered successfully with balance ${balances[hash]} USD` });
 });
+
+// Example function to calculate dynamic starting balances per hash
+function calculateStartingBalance(hash) {
+    return parseInt(hash.substring(0, 8), 16); // Generates balance from hash data
+}
+
 
 
 // Transfer Route (Deduct Balance)
