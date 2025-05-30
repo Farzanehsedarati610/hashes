@@ -15,6 +15,10 @@ app.use((req, res, next) => {
 });
 
 // Transfer Route Example
+app.get("/api/auth-test", (req, res) => {
+  res.json({ success: true, message: "API authentication is working!" });
+});
+
 app.post("/api/transfer", (req, res) => {
   const { hash, amount, routing_number, account_number } = req.body;
 
