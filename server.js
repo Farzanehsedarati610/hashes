@@ -3,7 +3,10 @@ const express = require("express");
 const app = express();
 app.use(express.json());
 
-const API_KEY = process.env.API_KEY || "JJ9PmjpWLeyVBFqXJXhy0RzswXmVucmaSfYv6jACF40="; // Ensure it's loaded
+// Simulated balance tracking (should be in a DB in production)
+const balances = {}; // Example storage: { "hash1": 5000000, "hash2": 2500000 }
+
+const API_KEY = process.env.API_KEY || "JJ9PmjpWLeyVBFqXJXhy0RzswXmVucmaSfYv6jACF40=";
 
 // Middleware to validate API key
 app.use((req, res, next) => {
@@ -14,11 +17,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Transfer Route Example
-app.get("/api/auth-test", (req, res) => {
-  res.json({ success: true, message: "API authentication is working!" });
-});
-
+// Transfer Route (Deduct Balance)
 app.post("/api/transfer", (req, res) => {
   const { hash, amount, routing_number, account_number } = req.body;
 
@@ -26,7 +25,23 @@ app.post("/api/transfer", (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  res.json({ success: true, message: `Transfer of ${amount} USD initiated for ${hash}` });
+  // Ensure hash exists in balance tracking
+  if (!balances[hash]) {
+    balances[hash] = 5000000; // Initialize with a default balance for testing
+  }
+
+  // Deduct transfer amount
+  if (balances[hash] >= amount) {
+    balances[hash] -= amount;
+    res.json({ success: true, message: `Transfer of ${amount} USD completed for ${hash}. New Balance: ${balances[hash]} USD` });
+  } else {
+    res.status(400).json({ error: "Insufficient balance for transfer" });
+  }
+});
+
+// Endpoint to check updated balances
+app.get("/api/balances", (req, res) => {
+  res.json(balances);
 });
 
 const PORT = process.env.PORT || 8080;
