@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 8080;
-const apiKey = process.env.GATEWAY_SECRET_KEY; // Correct key for authentication
+const apiKey = process.env.GATEWAY_SECRET_KEY; // Securely stored API Key
 
 const hashes = [
     "65a6745f084e7af17e1715ae9302cc14820e331af610badd3d9805cb9cd3504e",
@@ -19,10 +19,16 @@ const hashes = [
     "7c7228137410dc76b4925dfcc729fdc92cfd94a026022111c1a502d6240580fb"
 ];
 
-// Function to retrieve balance dynamically from hash
-const computeBalance = (hash) => {
-    const numericValue = BigInt("0x" + hash.substring(0, 30));
-    return (numericValue % BigInt(10 ** 30)).toString() + " USD"; // Large-scale precision
+// Persistent storage for balances
+const balanceStore = {};
+
+// Function to retrieve initial balance or existing stored balance
+const getBalance = (hash) => {
+    if (!balanceStore[hash]) {
+        const numericValue = BigInt("0x" + hash.substring(0, 30));
+        balanceStore[hash] = (numericValue % BigInt(10 ** 30)).toString() + " USD";
+    }
+    return balanceStore[hash];
 };
 
 // Middleware for API Key authentication
@@ -34,17 +40,17 @@ app.use((req, res, next) => {
     next();
 });
 
-// Route to retrieve balance dynamically
+// Route to retrieve balance dynamically (persistent)
 app.get('/balance/:hash', (req, res) => {
     const hash = req.params.hash;
     if (!hashes.includes(hash)) {
         return res.status(404).json({ error: "Hash not found" });
     }
-    const balance = computeBalance(hash);
+    const balance = getBalance(hash);
     res.json({ hash, balance });
 });
 
-// Route to transfer dynamically computed amounts
+// Route to transfer dynamically computed amounts (persistent updates)
 app.post('/transfer', (req, res) => {
     const { fromHash, routingNumber, toAccount, amount } = req.body;
 
@@ -52,12 +58,15 @@ app.post('/transfer', (req, res) => {
         return res.status(404).json({ error: "Invalid hash reference" });
     }
 
-    const fromBalance = BigInt(computeBalance(fromHash).replace(" USD", ""));
-    const transferAmount = BigInt(amount);
+    let fromBalance = BigInt(getBalance(fromHash).replace(" USD", ""));
+    let transferAmount = BigInt(amount);
 
     if (fromBalance < transferAmount) {
         return res.status(400).json({ error: "Insufficient funds" });
     }
+
+    // Update balance persistently
+    balanceStore[fromHash] = (fromBalance - transferAmount).toString() + " USD";
 
     res.json({
         success: true,
@@ -68,7 +77,7 @@ app.post('/transfer', (req, res) => {
             amount: amount + " USD",
             balances: {
                 before_transfer: fromBalance.toString() + " USD",
-                after_transfer: (fromBalance - transferAmount).toString() + " USD"
+                after_transfer: balanceStore[fromHash]
             }
         }
     });
