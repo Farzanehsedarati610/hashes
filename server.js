@@ -19,22 +19,24 @@ app.use((req, res, next) => {
 
 // Transfer Route (Deduct Balance)
 app.post("/api/transfer", (req, res) => {
-    const { hash, amount, routing_number, account_number } = req.body;
+    const { hash, amount } = req.body;
 
-    if (!hash || !amount || !routing_number || !account_number) {
+    if (!hash || !amount) {
         return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Ensure balance is initialized per hash (default: 5M)
-    if (!balances.has(hash)) {
-        balances.set(hash, 5000000);
+    // Ensure balance exists and deduct
+    if (!balances[hash]) {
+        return res.status(400).json({ error: "Hash not found in balance tracking" });
     }
 
-    // Deduct balance dynamically
-    const currentBalance = balances.get(hash);
-    if (currentBalance >= amount) {
-        balances.set(hash, currentBalance - amount);
-        res.json({ success: true, message: `Transfer of ${amount} USD completed for ${hash}. New Balance: ${balances.get(hash)} USD` });
+    if (balances[hash] >= amount) {
+        balances[hash] -= amount;
+
+        // Force balance persistence (if using a JSON file storage mechanism)
+        fs.writeFileSync(BALANCE_FILE, JSON.stringify(balances, null, 2));
+
+        res.json({ success: true, message: `Transfer of ${amount} USD completed for ${hash}. New Balance: ${balances[hash]} USD` });
     } else {
         res.status(400).json({ error: "Insufficient balance for transfer" });
     }
