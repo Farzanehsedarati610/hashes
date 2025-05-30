@@ -16,6 +16,19 @@ app.use((req, res, next) => {
     }
     next();
 });
+app.post("/api/register", (req, res) => {
+    const { hash, balance } = req.body;
+
+    if (!hash || balance === undefined) {
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Register hash with initial balance
+    balances[hash] = balance;
+
+    res.json({ success: true, message: `Hash ${hash} registered with balance ${balance} USD` });
+});
+
 
 // Transfer Route (Deduct Balance)
 app.post("/api/transfer", (req, res) => {
